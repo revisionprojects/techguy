@@ -1,5 +1,5 @@
 
-# TechGuy AI Application
+# TechGuy AI Application 9
 
 TechGuy AI Application is a full-stack CRUD-based application designed to explore, manage, and showcase AI-related tools and applications. The platform provides a search and filter feature, a responsive UI, and dynamic image upload and management functionality. It is built using a **React frontend** and a **Django REST Framework backend**.
 
