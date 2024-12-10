@@ -5,31 +5,43 @@ import axios from 'axios';
 // Get the API Base URL from the environment variable
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-const HeroSection = ({ applications, onSearch }) => {
+const HeroSection = ({ onSearch }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [applications, setApplications] = useState([]);
+  const [filteredApplications, setFilteredApplications] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Fetch suggestions as the user types
+  // Fetch applications from the backend
+  useEffect(() => {
+    axios
+      .get(`${API_BASE_URL}/api/applications/`)
+      .then((response) => {
+        setApplications(response.data);
+        setFilteredApplications(response.data); // Default to all applications
+      })
+      .catch((error) => {
+        console.error('Error fetching applications:', error);
+      });
+  }, []);
+
+  // Fetch suggestions dynamically as the user types
   useEffect(() => {
     if (searchTerm.trim()) {
-      axios
-        .get(`${API_BASE_URL}/api/applications/search/?q=${searchTerm}`)
-        .then((response) => {
-          setSuggestions(response.data);
-          setShowSuggestions(true);
-        })
-        .catch((error) => {
-          console.error('Error fetching suggestions:', error);
-          setSuggestions([]);
-        });
+      const filtered = applications.filter((app) =>
+        app.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredApplications(filtered);
+      setSuggestions(filtered);
+      setShowSuggestions(true);
     } else {
+      setFilteredApplications(applications);
       setSuggestions([]);
       setShowSuggestions(false);
     }
-  }, [searchTerm]);
+  }, [searchTerm, applications]);
 
-  // Highlight matching text in the suggestion
+  // Highlight matching text in the suggestions
   const highlightMatch = (text) => {
     const regex = new RegExp(`(${searchTerm})`, 'gi');
     const parts = text.split(regex);
@@ -46,8 +58,12 @@ const HeroSection = ({ applications, onSearch }) => {
 
   // Handle search submission
   const handleSearch = () => {
-    onSearch(searchTerm);
+    const filtered = applications.filter((app) =>
+      app.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredApplications(filtered);
     setShowSuggestions(false); // Hide suggestions after searching
+    onSearch(searchTerm);
   };
 
   return (
@@ -60,7 +76,7 @@ const HeroSection = ({ applications, onSearch }) => {
         Discover and manage your favorite applications.
       </p>
 
-      {/* Search Bar with Dropdown */}
+      {/* Search Bar with Suggestions */}
       <div className="relative w-full mt-8 px-6 max-w-3xl">
         <div className="flex items-center">
           <TextField
@@ -93,7 +109,7 @@ const HeroSection = ({ applications, onSearch }) => {
               minWidth: '120px',
               textTransform: 'none',
               borderRadius: '4px',
-              marginLeft: '8px', // Add spacing between button and input
+              marginLeft: '8px',
             }}
           >
             Search
@@ -104,7 +120,7 @@ const HeroSection = ({ applications, onSearch }) => {
           <List
             sx={{
               position: 'absolute',
-              top: '64px', // Adjust to align with input field
+              top: '64px',
               left: 0,
               right: 0,
               backgroundColor: 'white',
@@ -121,11 +137,11 @@ const HeroSection = ({ applications, onSearch }) => {
                 key={app.id}
                 button
                 onClick={() => {
-                  setSearchTerm(app.name); // Set search term to clicked suggestion
-                  setShowSuggestions(false); // Hide suggestions
+                  setSearchTerm(app.name);
+                  setShowSuggestions(false);
                 }}
                 sx={{
-                  color: '#555', // Dark gray text for better contrast
+                  color: '#555',
                   padding: '8px 16px',
                   '&:hover': {
                     backgroundColor: '#f1f1f1',
@@ -137,6 +153,26 @@ const HeroSection = ({ applications, onSearch }) => {
             ))}
           </List>
         )}
+      </div>
+
+      {/* Gallery Section */}
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 max-w-5xl">
+        {filteredApplications.map((app) => (
+          <div
+            key={app.id}
+            className="bg-white rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105"
+          >
+            <img
+              src={app.image}
+              alt={app.name}
+              className="h-48 w-full object-cover"
+            />
+            <div className="p-4">
+              <h3 className="text-lg font-semibold">{app.name}</h3>
+              <p className="text-gray-600">{app.description}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
