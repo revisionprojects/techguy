@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { TextField, Button, List, ListItem } from '@mui/material';
+import ApplicationGallery from './ApplicationGallery';
 import axios from 'axios';
 
-// Get the API Base URL from the environment variable
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
-const HeroSection = ({ onSearch }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+const HeroSection = () => {
   const [applications, setApplications] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -15,33 +13,29 @@ const HeroSection = ({ onSearch }) => {
   // Fetch applications from the backend
   useEffect(() => {
     axios
-      .get(`${API_BASE_URL}/api/applications/`)
+      .get(`${process.env.REACT_APP_API_BASE_URL}/api/applications/`)
       .then((response) => {
         setApplications(response.data);
-        setFilteredApplications(response.data); // Default to all applications
+        setFilteredApplications(response.data);
       })
-      .catch((error) => {
-        console.error('Error fetching applications:', error);
-      });
+      .catch((error) => console.error('Error fetching applications:', error));
   }, []);
 
-  // Fetch suggestions dynamically as the user types
+  // Filter suggestions dynamically as the user types
   useEffect(() => {
     if (searchTerm.trim()) {
       const filtered = applications.filter((app) =>
         app.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredApplications(filtered);
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setFilteredApplications(applications);
       setSuggestions([]);
       setShowSuggestions(false);
     }
   }, [searchTerm, applications]);
 
-  // Highlight matching text in the suggestions
+  // Highlight matching text in the suggestion
   const highlightMatch = (text) => {
     const regex = new RegExp(`(${searchTerm})`, 'gi');
     const parts = text.split(regex);
@@ -63,20 +57,21 @@ const HeroSection = ({ onSearch }) => {
     );
     setFilteredApplications(filtered);
     setShowSuggestions(false); // Hide suggestions after searching
-    onSearch(searchTerm);
+  };
+
+  // Handle selecting a suggestion
+  const handleSuggestionClick = (name) => {
+    setSearchTerm(name); // Set search term to clicked suggestion
+    handleSearch(); // Trigger search
   };
 
   return (
     <div className="relative bg-gradient-to-b from-gray-900 to-purple-900 text-white min-h-screen flex flex-col items-center pt-16">
-      {/* Hero Section Header */}
-      <h1 className="text-4xl md:text-6xl font-bold text-center">
-        Explore Applications
-      </h1>
-      <p className="text-center text-lg md:text-xl mt-4">
-        Discover and manage your favorite applications.
-      </p>
+      {/* Header */}
+      <h1 className="text-4xl md:text-6xl font-bold text-center">Explore Applications</h1>
+      <p className="text-center text-lg md:text-xl mt-4">Discover and manage your favorite applications.</p>
 
-      {/* Search Bar with Suggestions */}
+      {/* Search Bar */}
       <div className="relative w-full mt-8 px-6 max-w-3xl">
         <div className="flex items-center">
           <TextField
@@ -91,12 +86,6 @@ const HeroSection = ({ onSearch }) => {
               flex: 1,
               '.MuiOutlinedInput-root': {
                 height: '56px',
-              },
-            }}
-            InputProps={{
-              style: {
-                height: '56px',
-                borderRadius: '4px',
               },
             }}
           />
@@ -120,7 +109,7 @@ const HeroSection = ({ onSearch }) => {
           <List
             sx={{
               position: 'absolute',
-              top: '64px',
+              top: '64px', // Adjust to align with input field
               left: 0,
               right: 0,
               backgroundColor: 'white',
@@ -136,12 +125,9 @@ const HeroSection = ({ onSearch }) => {
               <ListItem
                 key={app.id}
                 button
-                onClick={() => {
-                  setSearchTerm(app.name);
-                  setShowSuggestions(false);
-                }}
+                onClick={() => handleSuggestionClick(app.name)}
                 sx={{
-                  color: '#555',
+                  color: '#555', // Dark gray text for better contrast
                   padding: '8px 16px',
                   '&:hover': {
                     backgroundColor: '#f1f1f1',
@@ -155,25 +141,8 @@ const HeroSection = ({ onSearch }) => {
         )}
       </div>
 
-      {/* Gallery Section */}
-      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 max-w-5xl">
-        {filteredApplications.map((app) => (
-          <div
-            key={app.id}
-            className="bg-white rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105"
-          >
-            <img
-              src={app.image}
-              alt={app.name}
-              className="h-48 w-full object-cover"
-            />
-            <div className="p-4">
-              <h3 className="text-lg font-semibold">{app.name}</h3>
-              <p className="text-gray-600">{app.description}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Application Gallery */}
+      <ApplicationGallery applications={filteredApplications} />
     </div>
   );
 };
