@@ -1,53 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, List, ListItem } from '@mui/material';
+import { TextField, Button } from '@mui/material';
 import axios from 'axios';
 
 // Get the API Base URL from the environment variable
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
-const HeroSection = ({ applications, onSearch }) => {
+const HeroSection = ({ onSearch }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [applications, setApplications] = useState([]);
 
-  // Fetch suggestions as the user types
+  // Fetch applications from the backend
   useEffect(() => {
-    if (searchTerm.trim()) {
-      axios
-        .get(`${API_BASE_URL}/api/applications/search/?q=${searchTerm}`)
-        .then((response) => {
-          setSuggestions(response.data);
-          setShowSuggestions(true);
-        })
-        .catch((error) => {
-          console.error('Error fetching suggestions:', error);
-          setSuggestions([]);
-        });
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [searchTerm]);
-
-  // Highlight matching text in the suggestion
-  const highlightMatch = (text) => {
-    const regex = new RegExp(`(${searchTerm})`, 'gi');
-    const parts = text.split(regex);
-    return parts.map((part, index) =>
-      regex.test(part) ? (
-        <span key={index} style={{ fontWeight: 'bold', color: '#000' }}>
-          {part}
-        </span>
-      ) : (
-        <span key={index}>{part}</span>
-      )
-    );
-  };
+    axios
+      .get(`${API_BASE_URL}/api/applications/`)
+      .then((response) => {
+        setApplications(response.data);
+      })
+      .catch((error) => {
+        console.error('Error fetching applications:', error);
+      });
+  }, []);
 
   // Handle search submission
   const handleSearch = () => {
     onSearch(searchTerm);
-    setShowSuggestions(false); // Hide suggestions after searching
   };
 
   return (
@@ -60,7 +36,7 @@ const HeroSection = ({ applications, onSearch }) => {
         Discover and manage your favorite applications.
       </p>
 
-      {/* Search Bar with Dropdown */}
+      {/* Search Bar */}
       <div className="relative w-full mt-8 px-6 max-w-3xl">
         <div className="flex items-center">
           <TextField
@@ -68,7 +44,6 @@ const HeroSection = ({ applications, onSearch }) => {
             placeholder="Search applications..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onFocus={() => setShowSuggestions(true)}
             sx={{
               backgroundColor: 'white',
               borderRadius: '4px',
@@ -99,44 +74,26 @@ const HeroSection = ({ applications, onSearch }) => {
             Search
           </Button>
         </div>
-        {/* Suggestions Dropdown */}
-        {showSuggestions && suggestions.length > 0 && (
-          <List
-            sx={{
-              position: 'absolute',
-              top: '64px', // Adjust to align with input field
-              left: 0,
-              right: 0,
-              backgroundColor: 'white',
-              borderRadius: '4px',
-              boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
-              zIndex: 10,
-              maxHeight: '200px',
-              overflowY: 'auto',
-              padding: 0,
-            }}
+      </div>
+
+      {/* Gallery Section */}
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 max-w-5xl">
+        {applications.map((app) => (
+          <div
+            key={app.id}
+            className="bg-white rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105"
           >
-            {suggestions.map((app) => (
-              <ListItem
-                key={app.id}
-                button
-                onClick={() => {
-                  setSearchTerm(app.name); // Set search term to clicked suggestion
-                  setShowSuggestions(false); // Hide suggestions
-                }}
-                sx={{
-                  color: '#555', // Dark gray text for better contrast
-                  padding: '8px 16px',
-                  '&:hover': {
-                    backgroundColor: '#f1f1f1',
-                  },
-                }}
-              >
-                {highlightMatch(app.name)}
-              </ListItem>
-            ))}
-          </List>
-        )}
+            <img
+              src={app.image}
+              alt={app.name}
+              className="h-48 w-full object-cover"
+            />
+            <div className="p-4">
+              <h3 className="text-lg font-semibold">{app.name}</h3>
+              <p className="text-gray-600">{app.description}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
